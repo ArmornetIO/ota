@@ -1,0 +1,30 @@
+# Sign a rollback offer for an older release from CI. See docs/rollback.md.
+name: ota rollback
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release to roll back to, e.g. v1.7.0"
+        required: true
+permissions:
+  contents: write
+  id-token: write
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: sigstore/cosign-installer@v3
+      - uses: actions/setup-go@v5
+        with: { go-version: stable }
+      - run: go install github.com/ArmornetIO/ota/cmd/ota@latest
+      - name: Issue and sign the rollback offer
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          case "$TAG" in v[0-9]*) ;; *) echo "not a version tag: $TAG"; exit 1;; esac
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" -p ota-offer.json -O old.json
+          name="ota-offer-rollback-$(date -u +%Y%m%d%H%M%S).json"
+          ota offer -from old.json -downgrade -out "$name"
+          cosign sign-blob --yes --bundle "$name.sigstore.json" "$name"
+          gh release upload "$TAG" "$name" "$name.sigstore.json" --repo "$GITHUB_REPOSITORY"

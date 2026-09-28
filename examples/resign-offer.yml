@@ -1,0 +1,28 @@
+# Re-sign the current release's offer weekly, for offers that expire.
+# See docs/expiry.md. Copy into .github/workflows/ and adjust the lifetime.
+name: ota re-sign offer
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch: {}
+permissions:
+  contents: write
+  id-token: write
+jobs:
+  resign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: sigstore/cosign-installer@v3
+      - uses: actions/setup-go@v5
+        with: { go-version: stable }
+      - run: go install github.com/ArmornetIO/ota/cmd/ota@latest
+      - name: Re-issue and sign
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName)
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" -p ota-offer.json -O current.json
+          name="ota-offer-resign-$(date -u +%Y%m%d).json"
+          ota offer -from current.json -expires-in 720h -out "$name"
+          cosign sign-blob --yes --bundle "$name.sigstore.json" "$name"
+          gh release upload "$tag" "$name" "$name.sigstore.json" --repo "$GITHUB_REPOSITORY" --clobber
