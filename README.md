@@ -62,9 +62,8 @@ Each is its own Go module, so you take on only the dependencies you use.
 | `github.com/ArmornetIO/ota/otel` | OpenTelemetry metrics and traces | OpenTelemetry |
 | `github.com/ArmornetIO/ota/cmd/ota` | standalone server (`ota serve`) and publisher CLI (`ota offer`) | the above |
 
-The core, `lifecycle` and `service` need Go 1.24 or newer; `verify/sigstore`,
-`otel` and `cmd/ota` follow their dependencies (Go 1.25). A test holds the core
-modules to the standard library.
+Every module needs Go 1.27 or newer. A test holds the core modules to the
+standard library.
 
 ## Using it
 

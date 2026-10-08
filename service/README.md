@@ -38,4 +38,4 @@ _ = service.Restart(spec)    // runs whatever file is at BinaryPath now
   service must answer the SCM's control messages, and an ordinary console
   program registered with `sc` fails to start.
 
-Zero dependencies, Go 1.24+. Part of [ota](../README.md).
+Zero dependencies, Go 1.27+. Part of [ota](../README.md).

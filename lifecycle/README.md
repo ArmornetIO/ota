@@ -26,4 +26,4 @@ defer m.Stop(ctx) // stops "http", then "db"
   library, addressing steps by name. That is how adopters add a step before
   `ota`'s swap or drop one they do not need.
 
-Zero dependencies, Go 1.24+. Part of [ota](../README.md).
+Zero dependencies, Go 1.27+. Part of [ota](../README.md).
