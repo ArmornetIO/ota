@@ -396,6 +396,9 @@ func (c *Client) recordRunning() error {
 // downloads, verifies, swaps and restarts. With the default SelfExec
 // restarter it does not return when the update is applied: the process is
 // replaced by the new version, whose Boot runs the health gate.
+//
+// ctx is the only deadline: give it one, or a server that stops sending holds
+// the update lock until the process exits.
 func (c *Client) CheckAndUpdate(ctx context.Context) (Result, error) {
 	lock, err := stage.Acquire(c.layout.StateDir)
 	if err != nil {

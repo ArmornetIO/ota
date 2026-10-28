@@ -1,0 +1,29 @@
+# Runs in the public ota repo; armornet's own Actions never run it (armornet
+# tests these modules from its ci.yaml).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+      # Each module has its own go.mod, so one `./...` never reaches the rest.
+      - shell: bash
+        run: |
+          for m in . lifecycle service verify/sigstore otel cmd/ota; do
+            (cd "$m" && go vet ./... && go test -race -count=1 ./...)
+          done

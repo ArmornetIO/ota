@@ -19,6 +19,13 @@ offer ─▶ verify signature ─▶ download (resumable, hashed) ─▶ swap �
 - **No dependencies.** The core modules use only the standard library, and
   pure Go (no CGo) on Linux, macOS and Windows.
 
+## Status
+
+Alpha (`0.0.x`): the API and the on-disk state may change between any two
+releases, so pin an exact version. What holds regardless: the core modules
+take no third-party dependencies (a test fails otherwise), and the
+fault-injection suite below runs on every change.
+
 ## What it does
 
 Tested end to end by suites that run real binaries: a fault-injection run
@@ -310,6 +317,11 @@ The fault-injection suite (`client/faults_test.go`) builds `testdata/sampleapp`
 twice, as v1 and v2, and kills the updater at every step using the `otatest`
 build tag. Without that tag the kill hooks compile to nothing, so no shipped
 binary can be made to exit by an environment variable.
+
+Each module has its own `go.mod`, so `go test ./...` at the root covers only
+the core; `.github/workflows/ci.yml` lists all six. Build the `ota` command
+from a clone (`cd cmd/ota && go build .`): it resolves its sibling modules
+from the tree, so `go install …@version` refuses it.
 
 ## License
 

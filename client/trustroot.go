@@ -27,9 +27,10 @@ func (c *Client) loadRotatedVerifier() error {
 	if err != nil {
 		return err
 	}
+	// Fail closed: carrying on would trust the keys the stored root retired.
 	r, ok := c.verifier.(verify.Rotatable)
 	if !ok {
-		return nil
+		return fmt.Errorf("client: a rotated trust root is stored but verifier %q cannot load it", c.verifier.Kind())
 	}
 	v, err := r.Rotate(root)
 	if err != nil {

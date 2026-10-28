@@ -149,12 +149,9 @@ type BlobOptions struct {
 
 // ServeBlob streams one content-addressed artifact.
 //
-// Exported because there is more than one way to ASK for an artifact and only
-// one way to SERVE it. An agent names the digest it was offered; an installer
-// names a platform and has the digest resolved for it. Those differ in
-// addressing and in who may call them — not in how the bytes leave, and a second
-// copy of this drifts: the first one had no ETag, so a resumed 57MB download
-// started over, and no compression, so every install paid full size.
+// Exported so a host route that addresses artifacts differently (an installer
+// asking by platform, say) serves the bytes the same way, with the ETag that
+// lets a download resume and the compression a whole-file request gets.
 func ServeBlob(w http.ResponseWriter, r *http.Request, blobs BlobStore, sum string, opts BlobOptions) {
 	// Checked before it reaches the store: it becomes a file name there.
 	if !ota.ValidSHA256(sum) {
@@ -249,13 +246,4 @@ func httpError(w http.ResponseWriter, code int, msg string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
-}
-
-func contains(xs []string, x string) bool {
-	for _, v := range xs {
-		if v == x {
-			return true
-		}
-	}
-	return false
 }

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ArmornetIO/ota"
+	"github.com/ArmornetIO/ota/verify"
 	"github.com/ArmornetIO/ota/verify/ed25519"
 )
 
@@ -86,5 +87,11 @@ func TestTrustRootRotation(t *testing.T) {
 	e.publish("1.2.0", e.now.Add(time.Second), nil)
 	if _, err := e.client("1.1.0", nil).CheckAndUpdate(context.Background()); err != nil {
 		t.Fatalf("offer under the new key: %v", err)
+	}
+	// A wrapper hides Rotate; starting anyway would trust the retired key.
+	v, _ := ed25519.New(e.pub)
+	wrapped := struct{ verify.Verifier }{v}
+	if _, err := New(Options{Program: "app", ClientID: "c1", CurrentVersion: "1.1.0", BinaryPath: e.bin, Transport: e.tr, Verifier: wrapped}); err == nil {
+		t.Fatal("client started on the retired key")
 	}
 }

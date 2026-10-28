@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"slices"
 	"time"
 )
 
@@ -106,15 +107,7 @@ func (o Offer) ArtifactFor(goos, goarch string) (Artifact, bool) {
 
 // AdmitsChannel reports whether a client on channel may be shown this offer.
 func (o Offer) AdmitsChannel(channel string) bool {
-	if len(o.Channels) == 0 {
-		return true
-	}
-	for _, c := range o.Channels {
-		if c == channel {
-			return true
-		}
-	}
-	return false
+	return len(o.Channels) == 0 || slices.Contains(o.Channels, channel)
 }
 
 func (o *Offer) validate() error {
@@ -189,3 +182,6 @@ func isLoopback(host string) bool {
 // ValidSHA256 reports whether s is a lowercase hex SHA-256, the only form an
 // artifact path segment may take before it reaches a store.
 func ValidSHA256(s string) bool { return sha256Re.MatchString(s) }
+
+// ValidChannel reports whether s is a well-formed channel name.
+func ValidChannel(s string) bool { return channelRe.MatchString(s) }

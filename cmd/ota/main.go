@@ -152,7 +152,12 @@ func serve(args []string) error {
 	if opts.Source != nil && *ingestEvery > 0 {
 		go func() {
 			for {
-				if res, err := srv.Ingest(ctx); err != nil {
+				// ponytail: one fixed bound so a stalled source cannot stop polling
+				// for good; make it a flag if a release's artifacts take longer.
+				ictx, cancel := context.WithTimeout(ctx, 30*time.Minute)
+				res, err := srv.Ingest(ictx)
+				cancel()
+				if err != nil {
 					log.Warn("ingest failed", "err", err)
 				} else if res.Ingested+res.Rejected > 0 {
 					log.Info("ingest", "ingested", res.Ingested, "rejected", res.Rejected, "errors", res.Errors)

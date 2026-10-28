@@ -6,13 +6,10 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/ArmornetIO/ota"
 )
-
-var channelRe = regexp.MustCompile(`^[a-z0-9-]{1,32}$`)
 
 // adminRoutes are mounted only when the host supplies AuthorizeAdmin, so a
 // server cannot be deployed with an open admin API by omission.
@@ -193,7 +190,7 @@ func (s *Server) adminClients(w http.ResponseWriter, r *http.Request) {
 // SetRollout validates and stores a rollout. The version must have a signed
 // offer admitting the channel, so a rollout can never point at nothing.
 func (s *Server) SetRollout(ctx context.Context, ro Rollout) error {
-	if !channelRe.MatchString(ro.Channel) || ro.Percent < 0 || ro.Percent > 100 ||
+	if !ota.ValidChannel(ro.Channel) || ro.Percent < 0 || ro.Percent > 100 ||
 		ro.HaltThreshold < 0 || ro.HaltThreshold > 1 || ro.HaltMinAttempts < 0 {
 		return errInvalid
 	}

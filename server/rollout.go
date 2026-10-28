@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"hash/fnv"
+	"slices"
 	"time"
 
 	"github.com/ArmornetIO/ota"
@@ -106,7 +107,7 @@ func (s *Server) findOffer(ctx context.Context, program, version, channel string
 		}
 		for i := range r.Offers {
 			o := r.Offers[i]
-			if o.IssuedAt <= after || (len(o.Channels) > 0 && !contains(o.Channels, channel)) {
+			if o.IssuedAt <= after || (len(o.Channels) > 0 && !slices.Contains(o.Channels, channel)) {
 				continue
 			}
 			if now != 0 && o.ExpiresAt != 0 && o.ExpiresAt <= now {

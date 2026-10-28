@@ -31,6 +31,9 @@ func runUpdate(cfg func() (Config, error), args []string) int {
 	dryRun := fs.Bool("dry-run", false, "check and verify the offer; download nothing")
 	asJSON := fs.Bool("json", false, "print the result as JSON")
 	wait := fs.Duration("wait", 0, "how long to wait for the new version's verdict (default: commit deadline + 30s)")
+	// A stalled server would otherwise hold the update lock until killed, and
+	// every later run would exit 50.
+	limit := fs.Duration("timeout", time.Hour, "give up on the check and download after this long")
 	if err := fs.Parse(args); err != nil {
 		return ExitError
 	}
@@ -48,6 +51,8 @@ func runUpdate(cfg func() (Config, error), args []string) int {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	uctx, cancel := context.WithTimeout(ctx, *limit)
+	defer cancel()
 
 	out := updateOutput{}
 	finish := func(r client.Result, err error) int {
@@ -68,14 +73,14 @@ func runUpdate(cfg func() (Config, error), args []string) int {
 	}
 
 	if *dryRun {
-		r, err := c.Available(ctx)
+		r, err := c.Available(uctx)
 		if r.UpToDate {
 			out.Result = "uptodate"
 		}
 		return finish(r, err)
 	}
 
-	r, err := c.CheckAndUpdate(ctx)
+	r, err := c.CheckAndUpdate(uctx)
 	if err != nil {
 		return finish(r, err)
 	}

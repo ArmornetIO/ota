@@ -24,7 +24,7 @@ const (
 )
 
 // Reported is whether a stage is sent to the server. The rest are local
-// progress: useful to a host watching events, noise in a fleet report.
+// progress: useful to a host watching events, noise in a server's report.
 func (s Stage) Reported() bool {
 	switch s {
 	case StageDownloading, StageVerified, StageInstalled, StageCommitted,

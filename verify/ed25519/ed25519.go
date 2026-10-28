@@ -40,6 +40,10 @@ func New(keys ...stded.PublicKey) (*Verifier, error) {
 	return &Verifier{keys: append([]stded.PublicKey(nil), keys...)}, nil
 }
 
+// The client reaches Rotate by assertion, so losing it would only show as a
+// refused rotation at run time.
+var _ verify.Rotatable = (*Verifier)(nil)
+
 // Kind implements verify.Verifier.
 func (v *Verifier) Kind() string { return Kind }
 

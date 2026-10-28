@@ -61,9 +61,11 @@ permissions:
   id-token: write   # cosign keyless signing
 steps:
   - uses: sigstore/cosign-installer@v3
-  # ota is not published as its own module yet: build it from the tree that
-  # vendors it (armornet: `cd ota/cmd/ota && go build -o "$HOME/go/bin/ota" .`).
-  - run: go install github.com/ArmornetIO/ota/cmd/ota@latest
+  # Built from a clone: cmd/ota resolves its sibling modules from the tree, so
+  # `go install …@version` refuses it.
+  - run: |
+      git clone --depth 1 https://github.com/ArmornetIO/ota "$RUNNER_TEMP/ota"
+      cd "$RUNNER_TEMP/ota/cmd/ota" && go build -o "$(go env GOPATH)/bin/ota" .
   - uses: goreleaser/goreleaser-action@v6
     with: { args: release --clean }
 ```

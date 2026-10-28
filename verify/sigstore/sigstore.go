@@ -98,6 +98,10 @@ func parseBundle(b []byte) (sgverify.SignedEntity, error) {
 	return &bn, nil
 }
 
+// The client reaches Rotate by assertion, so losing it would only show as a
+// refused rotation at run time.
+var _ verify.Rotatable = (*Verifier)(nil)
+
 // Kind implements verify.Verifier.
 func (v *Verifier) Kind() string { return Kind }
 
