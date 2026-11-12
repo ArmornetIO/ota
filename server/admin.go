@@ -42,20 +42,23 @@ func writeJSON(w http.ResponseWriter, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
+// ReleaseView is one release as GET /v1/admin/releases lists it. Offer bytes
+// are for clients; the admin view says what was decided and why. Untagged, so
+// its keys are the field names.
+type ReleaseView struct {
+	Program, Version, Tag, Source, Status, Reason string
+	Offers                                        int
+}
+
 func (s *Server) adminReleases(w http.ResponseWriter, r *http.Request) {
 	rels, err := s.opts.Store.Releases(r.Context(), r.URL.Query().Get("program"))
 	if err != nil {
 		httpError(w, http.StatusInternalServerError, "could not list releases")
 		return
 	}
-	// Offer bytes are for clients; the admin view says what was decided and why.
-	type view struct {
-		Program, Version, Tag, Source, Status, Reason string
-		Offers                                        int
-	}
-	out := make([]view, 0, len(rels))
+	out := make([]ReleaseView, 0, len(rels))
 	for _, rel := range rels {
-		out = append(out, view{rel.Program, rel.Version, rel.Tag, rel.Source, rel.Status, rel.Reason, len(rel.Offers)})
+		out = append(out, ReleaseView{rel.Program, rel.Version, rel.Tag, rel.Source, rel.Status, rel.Reason, len(rel.Offers)})
 	}
 	writeJSON(w, out)
 }
