@@ -25,7 +25,8 @@ are the rules that cause real bugs when broken.
 ## Testing
 
 - Each module has its own `go.mod`: test `.`, `lifecycle`, `service`,
-  `verify/sigstore`, `otel` and `cmd/ota` separately.
+  `verify/sigstore`, `server/source/github`, `otel` and `cmd/ota`
+  separately.
 - Tests open localhost listeners; a sandbox that blocks them fails `httptest`.
 - `client/faults_test.go` and `cli/cli_test.go` build `testdata/sampleapp` and
   run real binaries; `-short` skips them.

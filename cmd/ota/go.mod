@@ -4,6 +4,7 @@ go 1.27.1
 
 require (
 	github.com/ArmornetIO/ota v0.0.0
+	github.com/ArmornetIO/ota/server/source/github v0.0.0
 	github.com/ArmornetIO/ota/verify/sigstore v0.0.0
 )
 
@@ -45,6 +46,8 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/certificate-transparency-go v1.3.3 // indirect
 	github.com/google/go-containerregistry v0.21.7 // indirect
+	github.com/google/go-github/v93 v93.0.0 // indirect
+	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0 // indirect
 	github.com/in-toto/attestation v1.2.0 // indirect
@@ -87,6 +90,7 @@ require (
 replace (
 	github.com/ArmornetIO/ota => ../..
 	github.com/ArmornetIO/ota/lifecycle => ../../lifecycle
+	github.com/ArmornetIO/ota/server/source/github => ../../server/source/github
 	github.com/ArmornetIO/ota/service => ../../service
 	github.com/ArmornetIO/ota/verify/sigstore => ../../verify/sigstore
 )

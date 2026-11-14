@@ -1,18 +1,20 @@
 // Package github reads releases from GitHub Releases (or GitHub Enterprise)
-// over the REST API, with net/http only.
+// over the REST API. It is its own module so the ota core stays free of
+// third-party dependencies.
 package github
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 
 	"github.com/ArmornetIO/ota/server"
+	gh "github.com/google/go-github/v93/github"
 )
 
 // repoRe follows GitHub's rules: owners are letters, digits and hyphens;
@@ -57,20 +59,9 @@ func New(repo, token string) (*Source, error) {
 // Name implements server.Source.
 func (s *Source) Name() string { return "github:" + s.Repo }
 
-type apiRelease struct {
-	TagName    string     `json:"tag_name"`
-	Draft      bool       `json:"draft"`
-	Prerelease bool       `json:"prerelease"`
-	Assets     []apiAsset `json:"assets"`
-}
-
-type apiAsset struct {
-	Name string `json:"name"`
-	Size int64  `json:"size"`
-	// URL is the API asset URL; with Accept: application/octet-stream it
-	// redirects to the bytes, and works for private repositories.
-	URL string `json:"url"`
-}
+// maxListBytes bounds the release listing; asset bodies are left unbounded
+// because an artifact is as large as the publisher made it.
+const maxListBytes = 16 << 20
 
 // Releases implements server.Source.
 func (s *Source) Releases(ctx context.Context) ([]server.SourceRelease, error) {
@@ -81,32 +72,36 @@ func (s *Source) Releases(ctx context.Context) ([]server.SourceRelease, error) {
 	if per == 0 {
 		per = 30
 	}
-	u := fmt.Sprintf("%s/repos/%s/releases?per_page=%d", s.api(), s.Repo, per)
-	resp, err := s.do(ctx, u, "application/vnd.github+json")
+	// The repo is already validated; escaping keeps that true if the pattern
+	// ever widens, since go-github splices owner and name in unescaped.
+	o, n, _ := strings.Cut(s.Repo, "/")
+	owner, name := url.PathEscape(o), url.PathEscape(n)
+	gc, err := s.client()
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-	var rels []apiRelease
-	if err := json.NewDecoder(io.LimitReader(resp.Body, 16<<20)).Decode(&rels); err != nil {
-		return nil, fmt.Errorf("github: decode releases: %w", err)
+	rels, _, err := gc.Repositories.ListReleases(ctx, owner, name, &gh.ListOptions{PerPage: per})
+	if err != nil {
+		return nil, fmt.Errorf("github: list releases: %w", err)
 	}
 	var out []server.SourceRelease
 	for _, r := range rels {
-		if r.Draft || (r.Prerelease && !s.IncludePrereleases) {
+		if r.GetDraft() || (r.GetPrerelease() && !s.IncludePrereleases) {
 			continue
 		}
-		sr := server.SourceRelease{Tag: r.TagName}
+		sr := server.SourceRelease{Tag: r.GetTagName()}
 		for _, a := range r.Assets {
-			a := a
+			id := a.GetID()
 			sr.Assets = append(sr.Assets, server.Asset{
-				Name: a.Name, Size: a.Size,
+				Name: a.GetName(), Size: int64(a.GetSize()),
 				Open: func(ctx context.Context) (io.ReadCloser, error) {
-					resp, err := s.do(ctx, a.URL, "application/octet-stream")
+					// The redirect to storage is followed by the plain client, so
+					// the token goes to GitHub and never to the storage host.
+					rc, _, err := gc.Repositories.DownloadReleaseAsset(ctx, owner, name, id, s.httpClient())
 					if err != nil {
-						return nil, err
+						return nil, fmt.Errorf("github: download asset %d: %w", id, err)
 					}
-					return resp.Body, nil
+					return rc, nil
 				},
 			})
 		}
@@ -122,33 +117,56 @@ func (s *Source) api() string {
 	return "https://api.github.com"
 }
 
-func (s *Source) do(ctx context.Context, url, accept string) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
+func (s *Source) httpClient() *http.Client {
+	if s.Client != nil {
+		return s.Client
 	}
-	req.Header.Set("Accept", accept)
-	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
-	token := s.Token
-	if s.TokenFunc != nil {
-		if token, err = s.TokenFunc(ctx); err != nil {
-			return nil, fmt.Errorf("github: token: %w", err)
+	return http.DefaultClient
+}
+
+func (s *Source) client() (*gh.Client, error) {
+	hc := s.httpClient()
+	next := hc.Transport
+	if next == nil {
+		next = http.DefaultTransport
+	}
+	base := s.api() + "/"
+	c, err := gh.NewClient(gh.WithHTTPClient(hc), gh.WithTransport(s.authorize(next)), gh.WithURLs(&base, nil))
+	if err != nil {
+		return nil, fmt.Errorf("github: %w", err)
+	}
+	return c, nil
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+// authorize resolves the token per request so a TokenFunc credential can
+// expire and refresh between calls.
+func (s *Source) authorize(next http.RoundTripper) roundTripFunc {
+	return func(req *http.Request) (*http.Response, error) {
+		token := s.Token
+		if s.TokenFunc != nil {
+			var err error
+			if token, err = s.TokenFunc(req.Context()); err != nil {
+				return nil, fmt.Errorf("github: token: %w", err)
+			}
 		}
+		out := req
+		if token != "" {
+			out = req.Clone(req.Context())
+			out.Header.Set("Authorization", "Bearer "+token)
+		}
+		resp, err := next.RoundTrip(out)
+		if resp != nil {
+			// go-github keeps the response's request inside its errors; the
+			// clone carries the token, so it never leaves this function.
+			resp.Request = req
+			if req.Header.Get("Accept") != "application/octet-stream" {
+				resp.Body = http.MaxBytesReader(nil, resp.Body, maxListBytes)
+			}
+		}
+		return resp, err
 	}
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-	c := s.Client
-	if c == nil {
-		c = http.DefaultClient
-	}
-	resp, err := c.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		_ = resp.Body.Close()
-		return nil, fmt.Errorf("github: GET %s: %s", url, resp.Status)
-	}
-	return resp, nil
 }

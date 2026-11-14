@@ -66,6 +66,7 @@ Each is its own Go module, so you take on only the dependencies you use.
 | [`github.com/ArmornetIO/ota/lifecycle`](lifecycle/) | ordered start/stop hooks with rollback | none |
 | [`github.com/ArmornetIO/ota/service`](service/) | register a program with systemd, launchd or Windows Task Scheduler | none |
 | `github.com/ArmornetIO/ota/verify/sigstore` | Sigstore verification | sigstore-go |
+| `github.com/ArmornetIO/ota/server/source/github` | release intake from GitHub Releases | go-github |
 | `github.com/ArmornetIO/ota/otel` | OpenTelemetry metrics and traces | OpenTelemetry |
 | `github.com/ArmornetIO/ota/cmd/ota` | standalone server (`ota serve`) and publisher CLI (`ota offer`) | the above |
 
