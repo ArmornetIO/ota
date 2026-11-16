@@ -3,7 +3,7 @@ module github.com/ArmornetIO/ota/server/source/github
 go 1.27.4
 
 require (
-	github.com/ArmornetIO/ota v0.0.0
+	github.com/ArmornetIO/ota v0.0.1
 	github.com/google/go-github/v93 v93.0.0
 )
 

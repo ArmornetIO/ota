@@ -3,14 +3,14 @@ module github.com/ArmornetIO/ota/cmd/ota
 go 1.27.4
 
 require (
-	github.com/ArmornetIO/ota v0.0.0
-	github.com/ArmornetIO/ota/server/source/github v0.0.0
-	github.com/ArmornetIO/ota/verify/sigstore v0.0.0
+	github.com/ArmornetIO/ota v0.0.1
+	github.com/ArmornetIO/ota/server/source/github v0.0.1
+	github.com/ArmornetIO/ota/verify/sigstore v0.0.1
 )
 
 require (
-	github.com/ArmornetIO/ota/lifecycle v0.0.0 // indirect
-	github.com/ArmornetIO/ota/service v0.0.0 // indirect
+	github.com/ArmornetIO/ota/lifecycle v0.0.1 // indirect
+	github.com/ArmornetIO/ota/service v0.0.1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect

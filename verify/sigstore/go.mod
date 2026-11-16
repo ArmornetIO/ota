@@ -3,7 +3,7 @@ module github.com/ArmornetIO/ota/verify/sigstore
 go 1.27.4
 
 require (
-	github.com/ArmornetIO/ota v0.0.0
+	github.com/ArmornetIO/ota v0.0.1
 	github.com/sigstore/sigstore-go v1.3.0
 )
 

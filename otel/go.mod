@@ -3,7 +3,7 @@ module github.com/ArmornetIO/ota/otel
 go 1.27.4
 
 require (
-	github.com/ArmornetIO/ota v0.0.0
+	github.com/ArmornetIO/ota v0.0.1
 	go.opentelemetry.io/otel v1.47.0
 	go.opentelemetry.io/otel/metric v1.47.0
 	go.opentelemetry.io/otel/sdk v1.47.0
