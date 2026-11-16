@@ -1,3 +1,3 @@
 module github.com/ArmornetIO/ota/lifecycle
 
-go 1.27.1
+go 1.27.4

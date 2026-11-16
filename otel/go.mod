@@ -1,6 +1,6 @@
 module github.com/ArmornetIO/ota/otel
 
-go 1.27.1
+go 1.27.4
 
 require (
 	github.com/ArmornetIO/ota v0.0.0

@@ -1,6 +1,6 @@
 module github.com/ArmornetIO/ota
 
-go 1.27.1
+go 1.27.4
 
 require (
 	github.com/ArmornetIO/ota/lifecycle v0.0.0
