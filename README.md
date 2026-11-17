@@ -1,10 +1,13 @@
 # ota
 
-Over-the-air updates for Go programs. Your release pipeline signs the update,
-the machine streams and verifies it, swaps the binary atomically, and keeps the
-new version only after it proves it is healthy. If anything fails, including a
-power cut halfway through, the machine is left running the version it had
-before.
+**Over-the-air updates for Go programs: signed in CI, proven on the machine, rolled back on failure.**
+
+Your release pipeline signs the update. The machine verifies it, streams it,
+swaps the binary atomically, and keeps the new version only after it proves it
+is healthy. If anything fails, including a power cut halfway through, the
+machine is left running the version it had before.
+
+<img src="docs/scenes/ota-update.gif" width="100%" alt="CI signs an offer; four machines verify, download, swap and run the health gate; three commit 1.8.0 and one fails its gate and rolls back to 1.7.2">
 
 ```
 offer ─▶ verify signature ─▶ download (resumable, hashed) ─▶ swap ─▶ restart ─▶ health gate ─▶ commit
@@ -272,6 +275,8 @@ A deliberate rollback is a new signed offer naming the older version.
 
 ## Security model
 
+<img src="docs/scenes/ota-forged-offer.gif" width="100%" alt="An attacker takes the update server and serves a forged offer, then replays an old signed one; every machine refuses both with exit 20 and stays on 1.8.0">
+
 - **The publisher signs offers; nothing else can.** A compromised release
   server can withhold offers, but it cannot forge one, and it cannot replay an
   old one: each machine remembers the newest offer it acted on.
@@ -323,6 +328,10 @@ Each module has its own `go.mod`, so `go test ./...` at the root covers only
 the core; `.github/workflows/ci.yml` lists all six. Build the `ota` command
 from a clone (`cd cmd/ota && go build .`): it resolves its sibling modules
 from the tree, so `go install …@version` refuses it.
+
+The GIFs in this README are scenes from
+[Showcase](https://github.com/ArmornetIO/showcase), filmed frame by frame by its
+`npm run record:scenes`. The terminal text in them is what `ota` prints.
 
 ## License
 
